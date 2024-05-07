@@ -21,7 +21,7 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
 This happens because `end_pos` gets overflowed here https://github.com/swc-project/swc/blob/eebf14fbef1be34c98db736ad549b1f11d5d8a98/common/src/syntax_pos/mod.rs#L688
 
-This Happens because there is static instance of SWC Compiler which is cloned and used for transform and minify.
+This Happens because there is static instance of SWC Compiler which is cloned and used for transform and minify in `next-swc`: https://github.com/vercel/next.js/blob/canary/packages/next-swc/crates/napi/src/lib.rs#L85-L89.
 
 The SWC Compiler has `cm` field which is `Arc<SourceMap>`, making the same sourcemap to be shared among every clone of compiler.
 
@@ -31,9 +31,9 @@ The SourceMap has `start_pos` field which calculates the `start_pos` of next `So
 
 The `end_pos` calculated in `SourceFile::new` adds the file's length into the `start_pos` and stores it as a `BytePos`, i.e. a `u32`.
 
-Because in `Pos` trait implementation of `BytePos`, we are using `as u32`, this result in integer overflow get un-noticed.
+Because in `Pos` trait implementation of `BytePos`, we are using `as u32` to directly convert type, this result in integer overflow to get un-noticed.
 
-This gets detected later-on when in `swc_common::StringInput` we assert start and end positions.
+This gets detected later-on when in `swc_common::StringInput` we assert start and end positions: https://github.com/swc-project/swc/blob/main/crates/swc_common/src/input.rs#L31.
 
 ## Possible Solutions
 
